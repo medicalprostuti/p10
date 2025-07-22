@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "স্কেলার ফাংশনকে ভেক্টর রাশিতে রূপান্তরিত করে কোনটি?",
+          options: {
+            A: "সলিনয়ডাল",
+            B: "গ্র্যাডিয়েন্ট",
+            C: "ক্রস গুণন",
+            D: "ডাইভারজেন্স",
+          },
+          correct: "B",
+          explanation:
+            "<p>গ্র্যাডিয়েন্ট (Gradient) একটি স্কেলার ফাংশনকে ভেক্টর রাশিতে রূপান্তরিত করে। এটি একটি স্কেলার ক্ষেত্রের সর্বোচ্চ বৃদ্ধির হার এবং দিক নির্দেশ করে। গাণিতিকভাবে, একটি স্কেলার ফাংশন &phi;(x, y, z) এর গ্র্যাডিয়েন্ট হলো &nabla;&phi;।</p><ul><li>A) সলিনয়ডাল: এটি একটি ভেক্টর ক্ষেত্রের বৈশিষ্ট্য, যেখানে ডাইভারজেন্স শূন্য হয়।</li><li>B) গ্র্যাডিয়েন্ট: এটি সঠিক। এটি একটি স্কেলার ফাংশনকে ভেক্টর ক্ষেত্রে রূপান্তরিত করে।</li><li>C) ক্রস গুণন: এটি দুটি ভেক্টরের গুণফল, যা একটি নতুন ভেক্টর রাশি উৎপন্ন করে। এটি স্কেলারকে ভেক্টরে রূপান্তর করে না।</li><li>D) ডাইভারজেন্স: এটি একটি ভেক্টর ক্ষেত্র থেকে স্কেলার রাশি উৎপন্ন করে। এটি ভেক্টরকে স্কেলারে রূপান্তর করে।</li></ul>",
+        },
+        {
+          id: 2,
+          question:
+            "Scalar quantity এবং magnitude of gradient এর মধ্যে সম্পর্কটি হলো&mdash;",
+          options: {
+            A: "Equal",
+            B: "Opposite",
+            C: "Proportional",
+            D: "Disproportional",
+          },
+          correct: "A",
+          explanation: `<p><p>এই প্রশ্নটি কিছুটা বিভ্রান্তিকর। সাধারণত, 'Scalar quantity' এবং 'magnitude of gradient' এর মধ্যে সরাসরি 'Equal' সম্পর্ক থাকে না।</p>
+      <p>গ্র্যাডিয়েন্ট একটি স্কেলার ফাংশনের উপর কাজ করে একটি ভেক্টর উৎপন্ন করে। সেই ভেক্টরের 'magnitude' হলো একটি স্কেলার মান।</p>
+      <p>যদি প্রশ্নটি এমন হতো যে, একটি নির্দিষ্ট স্কেলার ফাংশন <i>f</i> এর <b>মান</b> এবং তার গ্র্যাডিয়েন্টের <b>মান</b> এর মধ্যে কী সম্পর্ক, তাহলে সেটা ফাংশনের উপর নির্ভর করে। তারা 'equal' হবে এমনটা সচরাচর হয় না।</p>
+      <p>তবে, যদি প্রশ্নটি বোঝাতে চায় যে, গ্র্যাডিয়েন্টের ম্যাগনিচিউড (magnitude of gradient) নিজেই একটি স্কেলার রাশি, তাহলে উত্তর 'Equal' (equal in terms of being scalar quantities) হতে পারে। কিন্তু এটি পরিষ্কারভাবে ব্যাখ্যা করা হয়নি।</p>
+      <p>যদি এই প্রশ্নের প্রসঙ্গে 'Equal' সঠিক উত্তর হয়, তাহলে সম্ভবত বোঝানো হয়েছে যে, গ্র্যাডিয়েন্টের ম্যাগনিচিউড একটি স্কেলার রাশি এবং এটি মূল স্কেলার রাশির সাথে একই ধরনের রাশি (যেমন, উভয়ই স্কেলার)। কিন্তু এটি গাণিতিক সমতা বোঝায় না।</p>
+      <p>প্রদত্ত উত্তর (A) Equal একটি ভুল ধারণা দিতে পারে। একটি স্কেলার রাশির গ্রেডিয়েন্টের মান (magnitude of gradient) আরেকটি স্কেলার রাশি, কিন্তু তারা সাধারণত সমান হয় না। একটি স্কেলার ফাংশন <i>f(x,y,z)</i> এর গ্রেডিয়েন্ট <span>∇<i>f</i></span> একটি ভেক্টর। এই ভেক্টরের মান <span>|∇<i>f</i>|</span>। এই <span>|∇<i>f</i>|</span> একটি স্কেলার রাশি। সুতরাং, একটি স্কেলার কোয়ান্টিটি এবং গ্রেডিয়েন্টের মান উভয়ই স্কেলার। এই অর্থে 'equal' (equal in category) হতে পারে। কিন্তু গাণিতিক মান হিসেবে 'equal' হওয়ার সম্ভাবনা খুবই কম।</p>
+      <p>সাধারণত, গ্রেডিয়েন্ট একটি ফাংশনের পরিবর্তনের হার নির্দেশ করে। এর মান ফাংশনের মানের সাথে সরাসরি সমান হবে না।</p>
+      <p>যদি একটি স্কেলার ফিল্ড <i>f</i> থাকে, তার গ্র্যাডিয়েন্ট <span>∇<i>f</i></span> একটি ভেক্টর ফিল্ড। <i>f</i> একটি স্কেলার রাশি। <span>|∇<i>f</i>|</span> একটি স্কেলার রাশি। এই দুই স্কেলার রাশির মধ্যে 'equal' সম্পর্ক সচরাচর থাকে না।</p>
+      <p>যদি <i>f(x) = x</i> হয়, তাহলে <span>∇<i>f</i> = 1</span> (স্কেলার)। এর মানও 1। এই ক্ষেত্রে তারা সমান। কিন্তু এটি একটি বিশেষ পরিস্থিতি।</p>
+      <p>প্রশ্নটি ভালোভাবে লেখা নেই। যদি উত্তর 'Equal' হয়, তাহলে এর অন্তর্নিহিত অর্থ ব্যাখ্যা করা কঠিন। তবে, যদি 'equal' বলতে বোঝায় যে দুটিই স্কেলার রাশি, তাহলে সেটা হতে পারে। তবে, এটি একটি দুর্বল প্রশ্ন।</p>
+      <p>প্রদত্ত উত্তর (A) Equal হওয়ার জন্য, প্রশ্নটি "A scalar quantity and the magnitude of its gradient are both what type of quantity?" এর মতো কিছু হওয়া উচিত ছিল, যার উত্তর হবে "Scalar quantity". কিন্তু এখানে সম্পর্ক চাওয়া হয়েছে।</p>`,
+        },
+        {
+          id: 3,
+          question: "সলিনয়ডাল হলো&mdash;",
+          options: {
+            A: "&nabla; &times; V = 0",
+            B: "&nabla; &sdot; V = 0",
+            C: "x + y = 0",
+            D: "V = 0",
+          },
+          correct: "B",
+          explanation:
+            "<p>একটি ভেক্টর ক্ষেত্র V কে সলিনয়ডাল (Solenoidal) বলা হয় যদি এর ডাইভারজেন্স (Divergence) শূন্য হয়। অর্থাৎ, ভেক্টর ক্ষেত্রের কোনো বিন্দুতে এর উৎস বা সিঙ্ক নেই।</p><p>গাণিতিকভাবে, সলিনয়ডাল ভেক্টর ক্ষেত্রের জন্য শর্তটি হলো:</p><p>&nabla; &sdot; V = 0</p><ul><li>A) &nabla; &times; V = 0: এটি অঘূর্ণনশীল (Irrotational) ভেক্টর ক্ষেত্রের শর্ত।</li><li>B) &nabla; &sdot; V = 0: এটি সঠিক। এটি সলিনয়ডাল ভেক্টর ক্ষেত্রের শর্ত।</li><li>C) x + y = 0: এটি একটি সমীকরণ, যা সলিনয়ডাল হওয়ার শর্ত নয়।</li><li>D) V = 0: এটি নির্দেশ করে যে ভেক্টর ক্ষেত্রটি নিজেই শূন্য, যা সলিনয়ডাল হওয়ার জন্য প্রয়োজনীয় শর্ত নয়।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "কোনটি অপারেটর নয়?",
+          options: {
+            A: "sin",
+            B: "&pi;",
+            C: "log",
+            D: "d/dx",
+          },
+          correct: "B",
+          explanation:
+            "<p>অপারেটর (Operator) হলো এমন একটি প্রতীক বা ফাংশন যা অন্য কোনো ফাংশন বা রাশির উপর কাজ করে একটি নতুন ফাংশন বা রাশি উৎপন্ন করে।</p><ul><li>A) sin (সাইন): এটি একটি ত্রিকোণমিতিক অপারেটর। এটি একটি কোণের উপর কাজ করে তার সাইন মান দেয়। যেমন, sin(x)।</li><li>B) &pi; (পাই): এটি একটি গাণিতিক ধ্রুবক, যার মান প্রায় 3.14159। এটি কোনো অপারেটর নয়।</li><li>C) log (লগারিদম): এটি একটি লগারিদমিক অপারেটর। এটি একটি সংখ্যার লগারিদম নির্ণয় করে। যেমন, log(x)।</li><li>D) d/dx: এটি একটি ডিফারেনশিয়াল অপারেটর। এটি একটি ফাংশনকে x এর সাপেক্ষে অন্তরীকরণ করে। যেমন, d/dx (f(x))।</li></ul><p>সুতরাং, &pi; একটি অপারেটর নয়, এটি একটি ধ্রুবক।</p>",
+        },
+        {
+          id: 5,
+          question: "কোনো অন্তরীকরণযোগ্য ভেক্টর অপেক্ষকের কার্ল হলো&mdash;",
+          options: {
+            A: "&nabla; &times; V",
+            B: "&phi;V",
+            C: "&nabla;&nabla;",
+            D: "V &sdot; &nabla;",
+          },
+          correct: "A",
+          explanation:
+            "<p>কার্ল (Curl) হলো একটি ভেক্টর অপারেটর যা একটি ভেক্টর ক্ষেত্রের ঘূর্ণন প্রবণতা পরিমাপ করে। এটি ভেক্টর অপারেটর &nabla; (ডেল) এবং একটি ভেক্টর অপেক্ষক V এর ভেক্টর গুণফল (Cross product) দ্বারা সংজ্ঞায়িত হয়।</p><p>গাণিতিকভাবে, V = V<sub>x</sub>i + V<sub>y</sub>j + V<sub>z</sub>k হলে, কার্ল V হলো:</p><p>Curl V = &nabla; &times; V</p><p>এটি একটি ভেক্টর রাশি।</p><ul><li>A) &nabla; &times; V: এটি সঠিক। এটি একটি ভেক্টর অপেক্ষকের কার্ল।</li><li>B) &phi;V: এটি একটি স্কেলার &phi; এবং একটি ভেক্টর V এর গুণফল। এটি কার্ল নয়।</li><li>C) &nabla;&nabla;: এটি একটি অপারেটর নয়, এটি ভুল প্রকাশ।</li><li>D) V &sdot; &nabla;: এটি একটি ভেক্টর ও ডেল অপারেটরের ডট গুণফল, যা সাধারণত ডাইভারজেন্স অপারেটরের সাথে সম্পর্কিত নয়, বা সরাসরি কার্ল নয়।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "কোনো ভেক্টরের ডাইভারজেন্স হলো&mdash;",
+          options: {
+            A: "ভেক্টর ক্ষেত্র",
+            B: "স্কেলার ক্ষেত্র",
+            C: "ওই ভেক্টরের নতিমাত্রা",
+            D: "অঘূর্ণনশীল",
+          },
+          correct: "B",
+          explanation:
+            "<p>ডাইভারজেন্স (Divergence) হলো একটি ভেক্টর অপারেটর যা একটি ভেক্টর ক্ষেত্রের কোনো বিন্দু থেকে 'প্রবাহ' বা 'উৎস/সিঙ্ক' এর হার পরিমাপ করে। এটি ভেক্টর অপারেটর &nabla; (ডেল) এবং একটি ভেক্টর ক্ষেত্র V এর স্কেলার গুণফল (Dot product) দ্বারা সংজ্ঞায়িত হয়।</p><p>গাণিতিকভাবে, Divergence V = &nabla; &sdot; V।</p><p>ডাইভারজেন্সের ফলাফল একটি স্কেলার রাশি। সুতরাং, এটি একটি স্কেলার ক্ষেত্র উৎপন্ন করে।</p><ul><li>A) ভেক্টর ক্ষেত্র: এটি ভুল। ডাইভারজেন্সের ফলাফল স্কেলার।</li><li>B) স্কেলার ক্ষেত্র: এটি সঠিক। ডাইভারজেন্স একটি ভেক্টর ক্ষেত্র থেকে একটি স্কেলার ক্ষেত্র উৎপন্ন করে।</li><li>C) ওই ভেক্টরের নতিমাত্রা: নতিমাত্রা (Gradient) একটি স্কেলার ক্ষেত্র থেকে ভেক্টর ক্ষেত্র উৎপন্ন করে, ডাইভারজেন্স এর বিপরীত।</li><li>D) অঘূর্ণনশীল: এটি ভেক্টর ক্ষেত্রের একটি বৈশিষ্ট্য যেখানে কার্ল শূন্য হয়।</li></ul>",
+        },
+        {
+          id: 7,
+          question:
+            "A = (px + y)i + (y - 2z)j + (x + 3z)k ভেক্টরটি সলিনয়ডাল হবে যদি p = ?",
+          options: {
+            A: "2",
+            B: "4",
+            C: "3",
+            D: "-4",
+          },
+          correct: "D",
+          explanation:
+            "<p>একটি ভেক্টর ক্ষেত্র A সলিনয়ডাল হবে যদি এর ডাইভারজেন্স শূন্য হয়, অর্থাৎ &nabla; &sdot; A = 0।</p><p>একটি ভেক্টর A = A<sub>x</sub>i + A<sub>y</sub>j + A<sub>z</sub>k এর ডাইভারজেন্স হলো:</p><p>&nabla; &sdot; A = &part;A<sub>x</sub>/&part;x + &part;A<sub>y</sub>/&part;y + &part;A<sub>z</sub>/&part;z</p><p>এখানে দেওয়া আছে:<br>A<sub>x</sub> = px + y<br>A<sub>y</sub> = y - 2z<br>A<sub>z</sub> = x + 3z</p><p>এখন আংশিক অন্তরীকরণ (Partial differentiation) করি:</p><ul><li>&part;A<sub>x</sub>/&part;x = &part;(px + y)/&part;x = p</li><li>&part;A<sub>y</sub>/&part;y = &part;(y - 2z)/&part;y = 1</li><li>&part;A<sub>z</sub>/&part;z = &part;(x + 3z)/&part;z = 3</li></ul><p>সলিনয়ডাল হওয়ার শর্ত &nabla; &sdot; A = 0 প্রয়োগ করি:<br>p + 1 + 3 = 0<br>p + 4 = 0<br>p = -4</p><p>সুতরাং, ভেক্টরটি সলিনয়ডাল হবে যদি p = -4 হয়।</p><ul><li>A) 2: এটি ভুল।</li><li>B) 4: এটি ভুল।</li><li>C) 3: এটি ভুল।</li><li>D) -4: এটি সঠিক।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "f = xi + yj + zk হলে &nabla; &sdot; f কত?",
+          options: {
+            A: "1",
+            B: "2",
+            C: "3",
+            D: "4",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি ভেক্টর f = f<sub>x</sub>i + f<sub>y</sub>j + f<sub>z</sub>k এর ডাইভারজেন্স (&nabla; &sdot; f) হলো:</p><p>&nabla; &sdot; f = &part;f<sub>x</sub>/&part;x + &part;f<sub>y</sub>/&part;y + &part;f<sub>z</sub>/&part;z</p><p>এখানে দেওয়া আছে:<br>f<sub>x</sub> = x<br>f<sub>y</sub> = y<br>f<sub>z</sub> = z</p><p>এখন আংশিক অন্তরীকরণ (Partial differentiation) করি:</p><ul><li>&part;f<sub>x</sub>/&part;x = &part;(x)/&part;x = 1</li><li>&part;f<sub>y</sub>/&part;y = &part;(y)/&part;y = 1</li><li>&part;f<sub>z</sub>/&part;z = &part;(z)/&part;z = 1</li></ul><p>সুতরাং, &nabla; &sdot; f = 1 + 1 + 1 = 3</p><ul><li>A) 1: এটি ভুল।</li><li>B) 2: এটি ভুল।</li><li>C) 3: এটি সঠিক।</li><li>D) 4: এটি ভুল।</li></ul>",
+        },
+        {
+          id: 9,
+          question:
+            "(a &sdot; b)&sup2; = a&sup2;b&sup2; হলে a ও b ভেক্টর দুটির মধ্যবর্তী কোণ কত?",
+          options: {
+            A: "90&deg;",
+            B: "60&deg;",
+            C: "45&deg;",
+            D: "0&deg;",
+          },
+          correct: "D",
+          explanation:
+            "<p>দুটি ভেক্টর a ও b এর ডট গুণফল (Dot product) এর সংজ্ঞা হলো:</p><p>a &sdot; b = |a||b|cos&theta;</p><p>যেখানে |a| ও |b| হলো ভেক্টরদ্বয়ের মান, এবং &theta; হলো তাদের মধ্যবর্তী কোণ।</p><p>প্রশ্নে দেওয়া আছে: (a &sdot; b)&sup2; = a&sup2;b&sup2;</p><p>এখানে a&sup2; ও b&sup2; দ্বারা আসলে |a|&sup2; ও |b|&sup2; বোঝানো হয়েছে (অর্থাৎ, ভেক্টর মানের বর্গ)।</p><p>সুতরাং, আমরা লিখতে পারি:<br>(|a||b|cos&theta;)&sup2; = |a|&sup2;|b|&sup2;<br>|a|&sup2;|b|&sup2;cos&sup2;&theta; = |a|&sup2;|b|&sup2;</p><p>যদি |a| &ne; 0 এবং |b| &ne; 0 হয়, তাহলে আমরা উভয় পক্ষকে |a|&sup2;|b|&sup2; দিয়ে ভাগ করতে পারি:</p><p>cos&sup2;&theta; = 1</p><p>cos&theta; = &plusmn;1</p><p>যদি cos&theta; = 1 হয়, তাহলে &theta; = 0&deg;। (ভেক্টর দুটি একই দিকে সমান্তরাল)</p><p>যদি cos&theta; = -1 হয়, তাহলে &theta; = 180&deg;। (ভেক্টর দুটি বিপরীত দিকে সমান্তরাল)</p><p>অপশনগুলোর মধ্যে 0&deg; দেওয়া আছে, যা একটি সম্ভাব্য উত্তর। 180&deg; দেওয়া থাকলে সেটিও সঠিক হতো। তবে সাধারণত 0&deg; ই ধরা হয় যদি শুধু সমান্তরালতা বোঝানো হয়।</p><ul><li>A) 90&deg;: তখন cos&theta; = 0, তাই (a &sdot; b)&sup2; = 0 &ne; a&sup2;b&sup2; (যদি a,b অশূন্য হয়)।</li><li>B) 60&deg;: তখন cos&theta; = 1/2, তাই (a &sdot; b)&sup2; = a&sup2;b&sup2;/4 &ne; a&sup2;b&sup2;।</li><li>C) 45&deg;: তখন cos&theta; = 1/&radic;2, তাই (a &sdot; b)&sup2; = a&sup2;b&sup2;/2 &ne; a&sup2;b&sup2;।</li><li>D) 0&deg;: এটি সঠিক, কারণ তখন cos&theta; = 1, তাই (a &sdot; b)&sup2; = a&sup2;b&sup2;।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "ভেক্টর ক্ষেত্র V অঘূর্ণনশীল হলে নিচের কোনটি সঠিক?",
+          options: {
+            A: "&nabla; &sdot; V = 0",
+            B: "i &times; V = 0",
+            C: "&nabla; &times; V = 0",
+            D: "&nabla; &sdot; V = 0",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি ভেক্টর ক্ষেত্র V কে অঘূর্ণনশীল (Irrotational) বলা হয় যদি এর কার্ল (Curl) শূন্য হয়। এর অর্থ হলো, ভেক্টর ক্ষেত্রটির কোনো ঘূর্ণন প্রবণতা নেই।</p><p>গাণিতিকভাবে, অঘূর্ণনশীল ভেক্টর ক্ষেত্রের জন্য শর্তটি হলো:</p><p>&nabla; &times; V = 0</p><ul><li>A) &nabla; &sdot; V = 0: এটি সলিনয়ডাল (Solenoidal) ভেক্টর ক্ষেত্রের শর্ত।</li><li>B) i &times; V = 0: এটি বোঝায় যে V ভেক্টরটি i ভেক্টরের সমান্তরাল, যা অঘূর্ণনশীলতার সাধারণ শর্ত নয়।</li><li>C) &nabla; &times; V = 0: এটি সঠিক। এটি অঘূর্ণনশীল ভেক্টর ক্ষেত্রের শর্ত।</li><li>D) &nabla; &sdot; V = 0: এটি অপশন (A) এর পুনরাবৃত্তি এবং সলিনয়ডালতার শর্ত।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                            <label class="option" data-option="${option}">
+                                              <div class="circle">${option}</div>
+                                              <span class="option-text">${question.options[option]}</span>
+                                            </label>
+                                          `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                               <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                               <div class="explanation-content">
+                                                 <div class="explanation-label">ব্যাখ্যা:</div>
+                                                 ${question.explanation}
+                                               </div>
+                                             </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                          <p class="question-label">${
+                                            index + 1
+                                          }. ${question.question}</p>
+                                          <div class="options">
+                                            ${optionsHTML}
+                                          </div>
+                                          ${explanationHTML}
+                                        `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
